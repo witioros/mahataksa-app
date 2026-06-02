@@ -4,71 +4,79 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 # ==========================================
-# 0. ตั้งค่าหน้าเพจและตกแต่ง CSS (ธีมดวงดาว/จักรวาล)
+# 0. ตั้งค่าหน้าเพจและตกแต่ง CSS (ธีมสีเขียวอ่อนพาสเทล สบายตา)
 # ==========================================
 st.set_page_config(page_title="โปรแกรมมหาทักษาปกรณ์ขั้นสูง", layout="wide")
 
 st.markdown("""
 <style>
-/* ปรับพื้นหลังหลักให้เป็นสีไล่ระดับ (Gradient) โทนจักรวาลมืด */
+/* 1. พื้นหลังหลักสีเขียวพาสเทลอ่อนนวลๆ */
 .stApp {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+    color: #2f3640;
 }
 
-/* ปรับแต่งแถบเมนูด้านข้าง (Sidebar) ให้กลมกลืน */
+/* 2. แถบเมนูด้านข้าง (Sidebar) สีเขียวตุ่นนิดๆ ให้ดูมีมิติ */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f0c29 0%, #24243e 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background: #dcedc8;
+    border-right: 1px solid #c5e1a5;
 }
 
-/* ปรับแต่งกรอบข้อความแจ้งเตือน (Alerts) ให้โปร่งแสง (Glassmorphism) */
+/* 3. กล่องแจ้งเตือน (Alerts) ให้เป็นสีขาวโปร่งๆ กรอบเขียว */
 div.stAlert {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #a5d6a7;
     border-radius: 10px;
-    color: #ffffff !important;
+    color: #2f3640 !important;
 }
 
-/* ปรับแต่งตารางให้ดูหรูหราและอ่านง่ายขึ้น */
+/* 4. สีฟอนต์หัวข้อเป็นสีเขียวเข้ม (Forest Green) ให้อ่านง่าย */
+h1, h2, h3, h4 {
+    color: #2e7d32 !important; 
+    text-shadow: none;
+    font-weight: 600;
+}
+p, span, label, div {
+    color: #2f3640;
+}
+
+/* 5. ตกแต่งตารางให้ดูสะอาด สบายตา พื้นขาวสลับเขียวอ่อน */
 table {
+    background-color: #ffffff;
     border-radius: 8px;
     overflow: hidden;
     width: 100%;
+    border-collapse: collapse;
 }
 th {
-    background-color: rgba(223, 175, 44, 0.2) !important; 
-    color: #eccc68 !important;
+    background-color: #a5d6a7 !important; 
+    color: #1b5e20 !important;
     font-size: 16px;
-}
-tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.03);
-}
-tbody tr:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    text-align: left;
 }
 td {
-    color: #f1f2f6 !important;
+    color: #2f3640 !important;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+tbody tr:nth-child(even) {
+    background-color: #f9fbe7; /* สลับสีบรรทัดให้เป็นสีเหลืองอมเขียวอ่อนมาก */
+}
+tbody tr:hover {
+    background-color: #f1f8e9; /* สีตอนเอาเมาส์ชี้ */
 }
 
-/* ปรับสีฟอนต์หัวข้อและตัวหนังสือให้เป็นโทนสว่าง/สีทอง */
-h1, h2, h3, h4 {
-    color: #eccc68 !important; 
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-}
-p, span, label, div {
-    color: #f1f2f6;
-}
-
-/* ปรับแต่งตัวเลือก Dropdown และกล่องวันที่ */
+/* 6. ปรับแต่งตัวเลือก Dropdown และกล่องวันที่ */
 .stSelectbox div[data-baseweb="select"] > div {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    background-color: #ffffff;
+    color: #2f3640;
+    border: 1px solid #c5e1a5;
 }
 .stDateInput div[data-baseweb="input"] > div {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    background-color: #ffffff;
+    color: #2f3640;
+    border: 1px solid #c5e1a5;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -145,14 +153,25 @@ def get_current_dasha(natal_planet, dob, target_date):
     return ordered_planets[0], ordered_planets[0], dob, target_date
 
 def lookup_star_pair(p1, p2):
+    """ฟังก์ชันดึงข้อมูลดาวคู่ที่ปรับแก้ให้รองรับ JSON ทั้งแบบ Dictionary และ String (แก้บั๊กภาพที่ 2)"""
     key1 = f"{p1}_{p2}"
     key2 = f"{p2}_{p1}"
-    raw_text = predictions_data.get("star_pairs", {}).get(key1) or predictions_data.get("star_pairs", {}).get(key2)
-    if raw_text:
-        if ":" in raw_text:
-            pair_type, desc = raw_text.split(":", 1)
-            return pair_type.strip(), desc.strip()
-        return "-", raw_text.strip()
+    raw_data = predictions_data.get("star_pairs", {}).get(key1) or predictions_data.get("star_pairs", {}).get(key2)
+    
+    if raw_data:
+        # กรณี JSON เก็บเป็นแบบกล่องข้อมูล (Dictionary)
+        if isinstance(raw_data, dict):
+            p_type = raw_data.get("type", "-")
+            p_desc = raw_data.get("description", "ไม่มีคำอธิบายเพิ่มเติม")
+            return str(p_type).strip(), str(p_desc).strip()
+        
+        # กรณี JSON เก็บเป็นข้อความยาว (String)
+        elif isinstance(raw_data, str):
+            if ":" in raw_data:
+                pair_type, desc = raw_data.split(":", 1)
+                return pair_type.strip(), desc.strip()
+            return "-", raw_data.strip()
+            
     return "-", "ไม่มีเกณฑ์ดาวคู่เฉพาะกิจเด่นชัด"
 
 def to_thai_month_year(dt):
@@ -223,7 +242,7 @@ else:
             
         matrix_rows.append({
             "ดาวพระเคราะห์": PLANET_NAMES[p], "ภูมิเดิม": b_orig, "ภูมิจรปีนี้": b_trans,
-            "การปะทะไขว้ภูมิ": f"{b_orig}เดิม -> {b_trans}จร", "🔮 คำทำนายตามคัมภีร์": prediction_text, "🩺 โรคาพยากรณ์": health_alert
+            "การปะทะไขว้ภูมิ": f"{b_orig}เดิม ➡️ {b_trans}จร", "🔮 คำทำนายตามคัมภีร์": prediction_text, "🩺 โรคาพยากรณ์": health_alert
         })
     st.table(matrix_rows)
 
