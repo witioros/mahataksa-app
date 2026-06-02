@@ -16,15 +16,16 @@ st.markdown("""
 div.stAlert { background-color: rgba(255, 255, 255, 0.9) !important; border: 1px solid #a5d6a7; border-radius: 10px; color: #2f3640 !important; }
 h1, h2, h3, h4 { color: #2e7d32 !important; text-shadow: none; font-weight: 600; }
 p, span, label, div { color: #2f3640; }
-table { background-color: #ffffff; border-radius: 8px; overflow: hidden; width: 100%; border-collapse: collapse; }
-th { background-color: #a5d6a7 !important; color: #1b5e20 !important; font-size: 16px; padding: 12px; text-align: left; }
-td { color: #2f3640 !important; padding: 10px; border-bottom: 1px solid #e0e0e0; }
+table { background-color: #ffffff; border-radius: 8px; overflow: hidden; width: 100%; border-collapse: collapse; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+th { background-color: #a5d6a7 !important; color: #1b5e20 !important; font-size: 15px; padding: 12px; text-align: left; }
+td { color: #2f3640 !important; padding: 10px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
 tbody tr:nth-child(even) { background-color: #f9fbe7; }
 tbody tr:hover { background-color: #f1f8e9; }
 .stSelectbox div[data-baseweb="select"] > div { background-color: #ffffff; color: #2f3640; border: 1px solid #c5e1a5; }
 .stDateInput div[data-baseweb="input"] > div { background-color: #ffffff; color: #2f3640; border: 1px solid #c5e1a5; }
 .stNumberInput div[data-baseweb="input"] > div { background-color: #ffffff; color: #2f3640; border: 1px solid #c5e1a5; }
 .stTextInput div[data-baseweb="input"] > div { background-color: #ffffff; color: #2f3640; border: 1px solid #c5e1a5; }
+.summary-box { background-color: #ffffff; border-left: 5px solid #2e7d32; padding: 15px; border-radius: 5px; margin-top: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,6 +55,18 @@ THAI_MONTHS = {
     1: "ม.ค.", 2: "ก.พ.", 3: "มี.ค.", 4: "เม.ย.", 
     5: "พ.ค.", 6: "มิ.ย.", 7: "ก.ค.", 8: "ส.ค.", 
     9: "ก.ย.", 10: "ต.ค.", 11: "พ.ย.", 12: "ธ.ค."
+}
+
+# ฐานข้อมูลสำหรับแปลความหมายภูมิเพื่อทำสรุป
+BHUM_MEANING = {
+    "บริวาร": "เรื่องคนรอบข้าง ลูกน้อง บริวาร และเครือข่ายทางสังคม",
+    "อายุ": "เรื่องสุขภาพร่างกาย พลังชีวิต และความราบรื่นในการดำเนินชีวิต",
+    "เดช": "เรื่องอำนาจบารมี ชื่อเสียง ตำแหน่งหน้าที่การงาน",
+    "ศรี": "เรื่องโชคลาภ การเงิน ความสำเร็จ และสิริมงคล",
+    "มูละ": "เรื่องทรัพย์สิน อสังหาริมทรัพย์ ที่อยู่อาศัย และความมั่นคง",
+    "อุตสาหะ": "เรื่องความเหน็ดเหนื่อย โปรเจกต์งานที่ต้องใช้ความพยายาม",
+    "มนตรี": "เรื่องผู้ใหญ่ เจ้านาย และผู้อุปถัมภ์ค้ำชู",
+    "กาลกิณี": "เรื่องที่เป็นอุปสรรค ศัตรู หรือวิบากกรรมเดิม"
 }
 
 # ==========================================
@@ -190,13 +203,24 @@ with col2:
     else: st.warning(f"🚀 **ภูมิบริวารจรประจำปีนี้:** {PLANET_NAMES[transit_bariwan_planet]}")
 
 # ==========================================
-# 4. เมทริกซ์ไขว้ภูมิ
+# 4. เมทริกซ์ไขว้ภูมิ และ สรุปผล
 # ==========================================
 st.markdown("---")
 st.subheader("🧬 เมทริกซ์แห่งการไขว้ภูมิและการโรคาพยากรณ์ (อ้างอิง ณ วันเริ่มต้นตรวจสอบ)")
 
+summary_sri = ""
+summary_dech = ""
+summary_kalakini = ""
+summary_ayu = ""
+
 if transit_bariwan_planet == 'TK':
     st.write("🔍 เนื่องจากปีนี้ดวงชะตาตกอยู่ในภูมิ **'ตากลาง'** พลังงานดาวเข้าสู่ช่วงปรับสมดุลพิกัดศูนย์กลาง จึงงดการไขว้ภูมิปะทะชั่วคราวตามกฎคัมภีร์ดั้งเดิม")
+    st.markdown("""
+    <div class="summary-box">
+        <h4>💡 สรุปภาพรวมดวงชะตาประจำปี (ปีตากลาง)</h4>
+        <p>ปีนี้เป็นปีแห่งการหยุดพักและปรับสมดุลชีวิต พลังงานต่างๆ จะไม่หวือหวา แนะนำให้ใช้ชีวิตด้วยความมีสติ ไม่ลงทุนเสี่ยง และประคับประคองสถานการณ์รอบตัวให้ผ่านพ้นปีนี้ไปอย่างราบรื่น</p>
+    </div>
+    """, unsafe_allow_html=True)
 else:
     seq_logic = SEQ_MALE_CW if gender == 'ชาย' else SEQ_FEMALE_CCW
     idx_natal = seq_logic.index(natal_planet)
@@ -208,6 +232,13 @@ else:
     for p in seq_logic:
         b_orig = natal_bhum_map[p]
         b_trans = transit_bhum_map[p]
+        
+        # เก็บข้อมูลเพื่อทำสรุป
+        if b_trans == "ศรี": summary_sri = b_orig
+        elif b_trans == "เดช": summary_dech = b_orig
+        elif b_trans == "กาลกิณี": summary_kalakini = b_orig
+        elif b_trans == "อายุ": summary_ayu = b_orig
+            
         prediction_text = predictions_data.get("matrix_64", {}).get(f"{b_orig}_{b_trans}", "🔮 รออัปเดตคำทำนาย...")
         
         health_alert = "-"
@@ -220,23 +251,64 @@ else:
             "การปะทะไขว้ภูมิ": f"{b_orig}เดิม ➡️ {b_trans}จร", "🔮 คำทำนายตามคัมภีร์": prediction_text, "🩺 โรคาพยากรณ์": health_alert
         })
     st.table(matrix_rows)
+    
+    # พิมพ์กล่องสรุปภาพรวมจากข้อมูลที่เก็บมา
+    st.markdown(f"""
+    <div class="summary-box">
+        <h4 style="margin-top:0px;">💡 สรุปภาพรวมดวงชะตาในปีนี้ (ไฮไลท์สำคัญ)</h4>
+        <p>✅ <b>จุดเด่นและโชคลาภ (ตกศรีจร):</b> พื้นฐานของ <b>{BHUM_MEANING.get(summary_sri, summary_sri)}</b> จะนำมาซึ่งสิริมงคล โชคลาภ และความสำเร็จอย่างโดดเด่นที่สุดในปีนี้</p>
+        <p>⚡ <b>อำนาจบารมี (ตกเดชจร):</b> คุณจะได้รับการส่งเสริมให้มีความก้าวหน้าและมีชื่อเสียงใน <b>{BHUM_MEANING.get(summary_dech, summary_dech)}</b></p>
+        <p style="color:#c0392b;">⚠️ <b>จุดวิกฤตที่ต้องระวังขั้นสุด (ตกกาลกิณีจร):</b> ต้องระวังปัญหา อุปสรรค หรือความสูญเสียที่เกิดจาก <b>{BHUM_MEANING.get(summary_kalakini, summary_kalakini)}</b> พยายามเลี่ยงความขัดแย้งในเรื่องนี้ให้มากที่สุด</p>
+        <p style="color:#d35400;">🩺 <b>จุดเปราะบางด้านสุขภาพ (ตกอายุจร):</b> อาจเกิดความแปรปรวนหรือความเหนื่อยล้าใน <b>{BHUM_MEANING.get(summary_ayu, summary_ayu)}</b></p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. ระบบไทม์ไลน์ดาวเสวยอายุและดาวแทรก (ประมวลผลเฉพาะช่วงเวลาที่เลือก)
+# 5. ระบบไทม์ไลน์ดาวเสวยอายุและดาวแทรก
 # ==========================================
 st.markdown("---")
 st.subheader(f"⏳ รายงานพยากรณ์ดาวแทรกแบบเจาะลึก (เฉพาะช่วงเวลาที่คุณระบุ)")
-st.info(f"📌 แสดงผลเฉพาะดาวแทรกที่โคจรพาดผ่านช่วงวันที่: **{start_target.strftime('%d/%m/%Y')}** ถึง **{end_target.strftime('%d/%m/%Y')}**")
 
+# หาจุดเริ่มต้นและจุดสิ้นสุดของดาวเสวยอายุหลักปัจจุบัน
 idx_natal = SEQUENCE_BASE.index(natal_planet)
 natal_ordered_planets = SEQUENCE_BASE[idx_natal:] + SEQUENCE_BASE[:idx_natal]
+
+current_runner_main = dob
+main_start_date = dob
+main_end_date = dob
+current_main_planet = natal_planet
+
+for p in natal_ordered_planets:
+    main_power = PLANET_POWERS[p]
+    main_end = current_runner_main + relativedelta(years=main_power)
+    if current_runner_main <= target_date < main_end:
+        current_main_planet = p
+        main_start_date = current_runner_main
+        main_end_date = main_end
+        break
+    current_runner_main = main_end
+
+# คำนวณเวลาที่เหลือของดาวเสวยอายุหลัก
+time_left = relativedelta(main_end_date, target_date)
+time_left_str = f"{time_left.years} ปี {time_left.months} เดือน {time_left.days} วัน"
+
+# แสดงกล่องสถานะดาวเสวยอายุ
+st.markdown(f"""
+<div style="background-color: #e8f5e9; border: 1px solid #81c784; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <h4 style="margin-top:0px; color:#2e7d32;">📌 ปัจจุบันดวงชะตากำลังเสวยอายุในรอบของ: <b>ดาว{PLANET_NAMES[current_main_planet]}</b></h4>
+    <p style="margin-bottom:0px; font-size:16px;">
+        ⏳ <b>ระยะเวลาของรอบนี้:</b> สิ้นสุดวันที่ {main_end_date.strftime('%d/%m/%Y')} <br>
+        ⏱️ <b>เหลือเวลาอีก:</b> <span style="color:#d35400; font-weight:bold;">{time_left_str}</span> (นับจากวันที่เริ่มตรวจสอบ)
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 expanded_timeline = []
 counter = 1
 current_runner = dob
 cycle_count = 0
 
-# ลูปหาดาวแทรกเฉพาะที่ทับซ้อนกับช่วงเวลาที่ผู้ใช้ระบุเท่านั้น (ข้ามรอบอายุได้ไม่จำกัด)
+# ลูปหาดาวแทรกเฉพาะที่ทับซ้อนกับช่วงเวลาที่ผู้ใช้ระบุเท่านั้น
 while current_runner <= dt_end_target and cycle_count < 200:
     for main_p in natal_ordered_planets:
         main_power = PLANET_POWERS[main_p]
@@ -257,7 +329,6 @@ while current_runner <= dt_end_target and cycle_count < 200:
                 
                 sub_end = sub_start + relativedelta(years=years, months=months, days=days)
                 
-                # เช็คว่าดาวแทรกช่วงนี้ ทับซ้อนกับช่วงเวลาที่ขอตรวจสอบหรือไม่
                 if sub_end >= target_date and sub_start <= dt_end_target:
                     p_type, p_essence = lookup_star_pair(main_p, sub_p)
                     analysis_text = f"**เนื้อแท้:** {p_essence}\n\n"
@@ -266,10 +337,8 @@ while current_runner <= dt_end_target and cycle_count < 200:
                     while seg_date < sub_end:
                         a_full = relativedelta(seg_date, dob).years
                         a_yang = a_full + 1
-                        
                         next_birthday = dob + relativedelta(years=a_full + 1)
                         seg_end = min(next_birthday, sub_end)
-                        
                         d_sum = get_digit_sum(a_yang)
                         p_path = generate_taksa_path(natal_planet, gender)
                         t_bariwan = p_path[(d_sum - 1) % len(p_path)]
@@ -287,7 +356,6 @@ while current_runner <= dt_end_target and cycle_count < 200:
                             b_trans = t_map[sub_p]
                             
                             matrix_desc = predictions_data.get("matrix_64", {}).get(f"{b_orig}_{b_trans}", "รออัปเดตคำพยากรณ์...")
-                            
                             prefix = "⚠️ **ปีวิกฤต!** " if b_trans == "กาลกิณี" else "🔹 "
                             analysis_text += f"{prefix}**ปี พ.ศ. {seg_date.year + 543} (อายุย่าง {a_yang} ปี):** บริวารจรตกดาว {PLANET_NAMES[t_bariwan]} ส่งผลให้ดาว {PLANET_NAMES[sub_p]} แปรสภาพเป็น **'{b_trans}จร'** ({b_orig}เดิม ➡️ {b_trans}จร) : {matrix_desc}\n\n"
                         
@@ -297,12 +365,17 @@ while current_runner <= dt_end_target and cycle_count < 200:
                     age_y_end = relativedelta(sub_end, dob).years + 1
                     age_range_str = f"อายุย่าง {age_y_start} ปี" if age_y_start == age_y_end else f"อายุย่าง {age_y_start} - {age_y_end} ปี"
                     
+                    is_overlapping = (current_runner <= dt_end_target) and (next_runner >= target_date)
+                    is_current_row = "🟢 อยู่ในช่วงที่ต้องการตรวจสอบ" if is_overlapping else "-"
+                    
                     expanded_timeline.append({
                         "ลำดับ": counter,
-                        "ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)": f"{to_thai_month_year(sub_start)} - {to_thai_month_year(sub_end)}\n({age_range_str})",
+                        "date_range": f"{to_thai_month_year(sub_start)} - {to_thai_month_year(sub_end)}",
+                        "age_range": f"({age_range_str})",
                         "เสวย - แทรก\n(คู่ดาว)": f"{PLANET_NAMES[main_p]} - {PLANET_NAMES[sub_p]}",
                         "ประเภท\n(เนื้อแท้)": p_type,
-                        "ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี": analysis_text
+                        "ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี": analysis_text,
+                        "สถานะ": is_current_row
                     })
                     counter += 1
                 sub_start = sub_end
@@ -317,10 +390,16 @@ else:
     for row in expanded_timeline:
         with st.container():
             st.markdown(f"### โครงสร้างลูปดาวแทรกที่ {row['ลำดับ']} 🟢")
-            col_t1, col_t2, col_t3 = st.columns([1, 1, 3])
+            col_t1, col_t2, col_t3 = st.columns([1.2, 1.2, 3])
             with col_t1:
-                st.metric(label="ช่วงเวลา (พ.ศ.)", value=row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[0])
-                st.caption(row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[1])
+                # ใช้ HTML ปรับลดขนาดฟอนต์ของวันที่ให้อ่านง่าย
+                st.markdown(f"""
+                <div style="background-color:rgba(255,255,255,0.5); padding:10px; border-radius:5px;">
+                    <p style="margin-bottom:0px; font-size:13px; color:#555;">ช่วงเวลา (พ.ศ.)</p>
+                    <p style="margin-bottom:0px; font-size:18px; font-weight:bold; color:#2e7d32;">{row['date_range']}</p>
+                    <p style="margin-top:2px; font-size:13px; color:#7f8c8d;">{row['age_range']}</p>
+                </div>
+                """, unsafe_allow_html=True)
             with col_t2:
                 st.write(f"**คู่ดาวเสวย-แทรก:**\n{row['เสวย - แทรก\n(คู่ดาว)']}")
                 st.write(f"**ประเภท:** {row['ประเภท\n(เนื้อแท้)']}")
