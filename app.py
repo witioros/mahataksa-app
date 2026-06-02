@@ -94,12 +94,11 @@ st.markdown("ระบบคำนวณโครงสร้างพลวั�
 with st.sidebar:
     st.header("🔮 ข้อมูลดวงชะตา")
     
-    # 🛠️ [จุดแก้ไข] เพิ่มระบบล็อกช่วงเวลาปฏิทินให้ย้อนหลังได้มากกว่า 70 ปี ถึงปีปัจจุบัน 2026
     dob = st.date_input(
         "วันเกิด (ค.ศ.)", 
-        value=datetime(1985, 1, 1),              # ตั้งค่าเริ่มต้นให้อยู่ในช่วงกลางๆ
-        min_value=datetime(1950, 1, 1),          # ย้อนหลังได้สูงสุดถึงปี 1950 (ครอบคลุม 76 ปี)
-        max_value=datetime(2026, 12, 31)         # สิ้นสุดที่ปีปัจจุบัน 2026
+        value=datetime(1985, 1, 1),
+        min_value=datetime(1950, 1, 1),
+        max_value=datetime(2026, 12, 31)
     )
     
     gender = st.radio("เพศสภาพ (มีผลต่อทิศทางการโคจร)", ["ชาย", "หญิง"])
@@ -116,10 +115,8 @@ with st.sidebar:
         format_func=lambda x: PLANET_NAMES[x]
     )
     
-    # หากเลือกวันเกิดอื่นๆ ที่ไม่ใช่พุธ ให้ยึดตามนั้น แต่ถ้าเป็นพุธให้เลือกตาม Option พิเศษได้
     natal_planet = wed_night_option if base_day in [4, 8] else base_day
     
-    # 🛠️ [จุดแก้ไข] เพิ่มการล็อกช่วงเวลาของวันจรที่ต้องการตรวจสอบด้วยเช่นกัน
     target_date = st.date_input(
         "วันที่ต้องการตรวจสอบดวงชะตาจร", 
         value=datetime(2026, 6, 2),
@@ -171,11 +168,9 @@ else:
         b_orig = natal_bhum_map[p]
         b_trans = transit_bhum_map[p]
         
-        # ดึงคำทำนายจากคลังข้อความใน JSON
         lookup_key = f"{b_orig}_{b_trans}"
         prediction_text = predictions_data.get("matrix_64", {}).get(lookup_key, "🔮 (ระบบกำลังรออัปเดตคำทำนายภูมิคู่พยากรณ์นี้...)")
         
-        # ตรวจสอบจุดเปราะบางทางกายวิภาคศาสตร์ (เมื่อตกภูมิกาลกิณี หรือ อายุจร)
         health_alert = "-"
         if b_trans in ["กาลกิณี", "อายุ"]:
             organ = predictions_data.get("anatomical_astrology", {}).get(str(p), "ระบบอวัยวะภายใน")
@@ -204,20 +199,25 @@ pair_relation = predictions_data.get("star_pairs", {}).get(pair_key, "ไม่�
 st.write(f"📌 ณ วันที่ตรวจสอบ ดวงชะตากำลังตกอยู่ในช่วง: **ดาวหลักเสวยอายุ: {PLANET_NAMES[main_p]}** และมี **ดาวแทรก: {PLANET_NAMES[sub_p]}**")
 st.warning(f"💬 **วิเคราะห์ปฏิสัมพันธ์คู่ดาวปะทะช่วงเวลานี้:** {pair_relation}")
 
-# แสดงตารางดาวแทรกทั้งหมดภายใต้ดาวเสวยอายุหลักปัจจุบัน
 st.markdown("#### 📅 ตารางไทม์ไลน์ดาวแทรกในรอบเสวยปัจจุบัน")
 main_power = PLANET_POWERS[main_p]
-idx_m = SEQUENCE_BASE.index(main_p)
-ordered_subs = SEQUENCE_BASE[idx_m:] + SEQUENCE_BASE[:idx_m]
 
-sub_timeline_data = []
-current_runner = dob # คำนวณสะสมจากวันเกิดเพื่อหาลูปดาวเสวยปัจจุบัน
-# วิ่งหาจุดเริ่มต้นของรอบเสวยอายุหลักนี้ก่อน
-for p in SEQUENCE_BASE:
+# 🛠️ [จุดแก้ไขบั๊กสำคัญ] ดึงลำดับดาวตามภูมิเกิด (Natal Order) ของเจ้าชะตามาคำนวณฐานเวลาสะสม
+idx_natal = SEQUENCE_BASE.index(natal_planet)
+natal_ordered_planets = SEQUENCE_BASE[idx_natal:] + SEQUENCE_BASE[:idx_natal]
+
+# คำนวณหาจุดเริ่มต้นที่แท้จริงของดาวเสวยอายุหลักปัจจุบัน โดยเริ่มนับสะสมจากวันเกิดจริง
+current_runner = dob
+for p in natal_ordered_planets:
     if p == main_p:
         break
     current_runner += relativedelta(years=PLANET_POWERS[p])
 
+# จัดลำดับดาวแทรกภายในรอบหลัก โดยเริ่มจากดาวหลักเสวยอายุนั้น แล้วเวียนรอบตามลูปภูมิเกิด
+idx_m_in_natal = natal_ordered_planets.index(main_p)
+ordered_subs = natal_ordered_planets[idx_m_in_natal:] + natal_ordered_planets[:idx_m_in_natal]
+
+sub_timeline_data = []
 for sub_planet in ordered_subs:
     sub_power = PLANET_POWERS[sub_planet]
     total_years = (main_power * sub_power) / 108.0
@@ -228,7 +228,6 @@ for sub_planet in ordered_subs:
     
     next_runner = current_runner + relativedelta(years=years, months=months, days=days)
     
-    # ตรวจสอบว่าเป็นช่วงปัจจุบันเพื่อทำการไฮไลท์
     is_current = "🟢 กำลังมีอิทธิพลอยู่ตอนนี้" if sub_planet == sub_p else "-"
     
     sub_timeline_data.append({
