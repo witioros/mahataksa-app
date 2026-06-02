@@ -1,1 +1,2 @@
-text streamlit python-dateutil
+streamlit
+python-dateutil
