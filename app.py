@@ -5,7 +5,7 @@ from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 
 # ==========================================
-# 0. ตั้งค่าหน้าเพจและตกแต่ง CSS (ธีมสีเขียวพาสเทล)
+# 0. ตั้งค่าหน้าเพจและตกแต่ง CSS
 # ==========================================
 st.set_page_config(page_title="โปรแกรมมหาทักษาปกรณ์ขั้นสูง", layout="wide")
 
@@ -50,8 +50,6 @@ PLANET_NAMES = {
     1: "อาทิตย์ (๑)", 2: "จันทร์ (๒)", 3: "อังคาร (๓)", 4: "พุธ (๔)",
     7: "เสาร์ (๗)", 5: "พฤหัสบดี (๕)", 8: "ราหู (๘)", 6: "ศุกร์ (๖)", 'TK': "ตากลาง (๕/๙)"
 }
-
-# จัดบรรทัดใหม่ให้ปลอดภัยจากการก๊อปปี้ตกหล่น
 THAI_MONTHS = {
     1: "ม.ค.", 2: "ก.พ.", 3: "มี.ค.", 4: "เม.ย.", 
     5: "พ.ค.", 6: "มิ.ย.", 7: "ก.ค.", 8: "ส.ค.", 
@@ -73,34 +71,6 @@ def generate_taksa_path(start_planet, gender):
     idx_1 = rotated.index(1)
     return rotated[:idx_1+1] + ['TK'] + rotated[idx_1+1:]
 
-def get_current_dasha(natal_planet, dob, target_date):
-    idx = SEQUENCE_BASE.index(natal_planet)
-    ordered_planets = SEQUENCE_BASE[idx:] + SEQUENCE_BASE[:idx]
-    
-    current_start = dob
-    for main_planet in ordered_planets:
-        main_power = PLANET_POWERS[main_planet]
-        main_end = current_start + relativedelta(years=main_power)
-        
-        if current_start <= target_date < main_end:
-            sub_start = current_start
-            sub_ordered = ordered_planets[ordered_planets.index(main_planet):] + ordered_planets[:ordered_planets.index(main_planet)]
-            
-            for sub_planet in sub_ordered:
-                sub_power = PLANET_POWERS[sub_planet]
-                total_years = (main_power * sub_power) / 108.0
-                years = int(total_years)
-                months_decimal = (total_years - years) * 12
-                months = int(months_decimal)
-                days = round((months_decimal - months) * 30)
-                
-                sub_end = sub_start + relativedelta(years=years, months=months, days=days)
-                if sub_start <= target_date <= sub_end:
-                    return main_planet, sub_planet, sub_start, sub_end
-                sub_start = sub_end
-        current_start = main_end
-    return ordered_planets[0], ordered_planets[0], dob, target_date
-
 def lookup_star_pair(p1, p2):
     key1 = f"{p1}_{p2}"
     key2 = f"{p2}_{p1}"
@@ -119,13 +89,16 @@ def lookup_star_pair(p1, p2):
 def to_thai_month_year(dt):
     return f"{THAI_MONTHS[dt.month]} {dt.year + 543}"
 
+# ดึงค่าปัจจุบันสำหรับเป็นค่าเริ่มต้น
+today = datetime.now()
+current_thai_year = today.year + 543
+
 # ==========================================
 # 3. ส่วนจัดหน้าจอ (UI) หลัก
 # ==========================================
 st.title("🕉️ โปรแกรมคำนวณหลักมหาทักษาปกรณ์ขั้นสูง")
 st.markdown("ระบบวิเคราะห์โครงสร้างพลวัตแห่งกาลเวลารายปีและเมทริกซ์ไขว้ภูมิพยากรณ์")
 
-# ตัวแปรดักจับ Error เพื่อนำไปแสดงผลตรงกลางหน้าจอ
 error_message = None
 dob = None
 
@@ -135,15 +108,14 @@ with st.sidebar:
     st.markdown("**วัน/เดือน/ปีเกิด (พ.ศ.)**")
     col_d, col_m, col_y = st.columns([1, 1.2, 1])
     with col_d:
-        d_day = st.selectbox("วัน", range(1, 32), index=27) # ค่าเริ่มต้น 28
+        d_day = st.selectbox("วัน", range(1, 32), index=today.day - 1)
     with col_m:
-        d_month = st.selectbox("เดือน", list(THAI_MONTHS.values()), index=0) # ค่าเริ่มต้น ม.ค.
+        d_month = st.selectbox("เดือน", list(THAI_MONTHS.values()), index=today.month - 1)
     with col_y:
-        d_year_th = st.number_input("ปี (พ.ศ.)", min_value=2400, max_value=2600, value=2524, step=1)
+        d_year_th = st.number_input("ปี (พ.ศ.)", min_value=2400, max_value=2600, value=current_thai_year, step=1)
         
-    d_time_str = st.text_input("เวลาเกิด (พิมพ์ตัวเลข เช่น 13:45)", value="13:45")
+    d_time_str = st.text_input("เวลาเกิด (พิมพ์ตัวเลข เช่น 13:45)", value=today.strftime("%H:%M"))
     
-    # แปลงเวลาที่พิมพ์ให้เป็นตัวเลข
     time_val = d_time_str.strip().replace(".", ":")
     hour, minute = 0, 0
     if not re.match(r"^\d{1,2}:\d{2}$", time_val):
@@ -156,7 +128,6 @@ with st.sidebar:
         except:
             error_message = "⚠️ รูปแบบเวลาเกิดไม่ถูกต้อง"
     
-    # ประกอบร่างเป็น Datetime อย่างปลอดภัย
     if not error_message:
         try:
             m_idx = list(THAI_MONTHS.values()).index(d_month) + 1
@@ -179,9 +150,9 @@ with st.sidebar:
     st.markdown("**ช่วงวันที่ต้องการตรวจสอบดวงชะตาจร**")
     col_t1, col_t2 = st.columns(2)
     with col_t1:
-        start_target = st.date_input("เริ่มจากวันที่", value=datetime(2026, 6, 2))
+        start_target = st.date_input("เริ่มจากวันที่", value=today)
     with col_t2:
-        end_target = st.date_input("ถึงวันที่", value=datetime(2027, 6, 2))
+        end_target = st.date_input("ถึงวันที่", value=today + relativedelta(years=1))
         
     if not error_message:
         if start_target > end_target:
@@ -209,7 +180,7 @@ digit_sum = get_digit_sum(age_yang)
 path = generate_taksa_path(natal_planet, gender)
 transit_bariwan_planet = path[(digit_sum - 1) % len(path)]
 
-st.header(f"📊 ผลการประมวลผลทักษาจร (อายุย่าง {age_yang} ปี)")
+st.header(f"📊 ผลการประมวลผลทักษาจร (อายุย่าง {age_yang} ปี ณ วันที่เริ่มต้นตรวจสอบ)")
 st.info(f"**สมการยุบตัวเลข (Digit Sum):** อายุย่าง {age_yang} ปี ➡️ รวมได้ = **{digit_sum} ก้าวดำเนิน** | **ทิศทางวิถี:** เพศ{gender} {'เวียนขวา (ตามเข็ม)' if gender == 'ชาย' else 'เวียนซ้าย (ทวนเข็ม)'}")
 
 col1, col2 = st.columns(2)
@@ -251,107 +222,108 @@ else:
     st.table(matrix_rows)
 
 # ==========================================
-# 5. ระบบไทม์ไลน์ดาวเสวยอายุและดาวแทรกแบบละเอียด
+# 5. ระบบไทม์ไลน์ดาวเสวยอายุและดาวแทรก (ประมวลผลเฉพาะช่วงเวลาที่เลือก)
 # ==========================================
 st.markdown("---")
-st.subheader("⏳ ระบบไทม์ไลน์ดาวเสวยอายุและดาวแทรกแบบละเอียดขยายผลรายปี")
-
-main_p, sub_p, start_d, end_d = get_current_dasha(natal_planet, dob, target_date)
-st.info(f"📌 จากช่วงเวลาเริ่มต้นที่คุณระบุ ดวงชะตากำลังโคจรอยู่ในรอบของ **ดาวหลักเสวยอายุ: {PLANET_NAMES[main_p]}**")
+st.subheader(f"⏳ รายงานพยากรณ์ดาวแทรกแบบเจาะลึก (เฉพาะช่วงเวลาที่คุณระบุ)")
+st.info(f"📌 แสดงผลเฉพาะดาวแทรกที่โคจรพาดผ่านช่วงวันที่: **{start_target.strftime('%d/%m/%Y')}** ถึง **{end_target.strftime('%d/%m/%Y')}**")
 
 idx_natal = SEQUENCE_BASE.index(natal_planet)
 natal_ordered_planets = SEQUENCE_BASE[idx_natal:] + SEQUENCE_BASE[:idx_natal]
 
-current_runner = dob
-for p in natal_ordered_planets:
-    if p == main_p: break
-    current_runner += relativedelta(years=PLANET_POWERS[p])
-
-idx_m_in_natal = natal_ordered_planets.index(main_p)
-ordered_subs = natal_ordered_planets[idx_m_in_natal:] + natal_ordered_planets[:idx_m_in_natal]
-main_power = PLANET_POWERS[main_p]
-
 expanded_timeline = []
 counter = 1
+current_runner = dob
+cycle_count = 0
 
-for sub_planet in ordered_subs:
-    sub_power = PLANET_POWERS[sub_planet]
-    total_years = (main_power * sub_power) / 108.0
-    years = int(total_years)
-    months_decimal = (total_years - years) * 12
-    months = int(months_decimal)
-    days = round((months_decimal - months) * 30)
-    
-    next_runner = current_runner + relativedelta(years=years, months=months, days=days)
-    
-    p_type, p_essence = lookup_star_pair(main_p, sub_planet)
-    
-    seg_date = current_runner
-    analysis_text = f"**เนื้อแท้:** {p_essence}\n\n"
-    
-    while seg_date < next_runner:
-        a_full = relativedelta(seg_date, dob).years
-        a_yang = a_full + 1
+# ลูปหาดาวแทรกเฉพาะที่ทับซ้อนกับช่วงเวลาที่ผู้ใช้ระบุเท่านั้น (ข้ามรอบอายุได้ไม่จำกัด)
+while current_runner <= dt_end_target and cycle_count < 200:
+    for main_p in natal_ordered_planets:
+        main_power = PLANET_POWERS[main_p]
+        main_end = current_runner + relativedelta(years=main_power)
         
-        next_birthday = dob + relativedelta(years=a_full + 1)
-        seg_end = min(next_birthday, next_runner)
-        
-        d_sum = get_digit_sum(a_yang)
-        p_path = generate_taksa_path(natal_planet, gender)
-        t_bariwan = p_path[(d_sum - 1) % len(p_path)]
-        
-        if t_bariwan == 'TK':
-            analysis_text += f"🔹 **ปี พ.ศ. {seg_date.year + 543} (อายุย่าง {a_yang} ปี):** ทักษาจรตกภูมิ **'ตากลาง'** พลังดาวเข้าสู่จุดปรับสมดุลพิกัดศูนย์กลาง\n\n"
-        else:
-            s_logic = SEQ_MALE_CW if gender == 'ชาย' else SEQ_FEMALE_CCW
-            idx_n = s_logic.index(natal_planet)
-            n_map = {s_logic[(idx_n + i) % 8]: BHUM_NAMES[i] for i in range(8)}
-            b_orig = n_map[sub_planet]
+        if main_end >= target_date and current_runner <= dt_end_target:
+            idx_m = SEQUENCE_BASE.index(main_p)
+            ordered_subs = SEQUENCE_BASE[idx_m:] + SEQUENCE_BASE[:idx_m]
             
-            idx_t = s_logic.index(t_bariwan)
-            t_map = {s_logic[(idx_t + i) % 8]: BHUM_NAMES[i] for i in range(8)}
-            b_trans = t_map[sub_planet]
-            
-            matrix_desc = predictions_data.get("matrix_64", {}).get(f"{b_orig}_{b_trans}", "รออัปเดตคำพยากรณ์...")
-            
-            prefix = "⚠️ **ปีวิกฤต!** " if b_trans == "กาลกิณี" else "🔹 "
-            analysis_text += f"{prefix}**ปี พ.ศ. {seg_date.year + 543} (อายุย่าง {a_yang} ปี):** บริวารจรตกดาว {PLANET_NAMES[t_bariwan]} ส่งผลให้ดาว {PLANET_NAMES[sub_planet]} แปรสภาพเป็น **'{b_trans}จร'** ({b_orig}เดิม ➡️ {b_trans}จร) : {matrix_desc}\n\n"
-        
-        seg_date = seg_end
-        
-    age_y_start = relativedelta(current_runner, dob).years + 1
-    age_y_end = relativedelta(next_runner, dob).years + 1
-    age_range_str = f"อายุย่าง {age_y_start} ปี" if age_y_start == age_y_end else f"อายุย่าง {age_y_start} - {age_y_end} ปี"
-    
-    is_overlapping = (current_runner <= dt_end_target) and (next_runner >= target_date)
-    is_current_row = "🟢 อยู่ในช่วงที่ต้องการตรวจสอบ" if is_overlapping else "-"
-    
-    expanded_timeline.append({
-        "ลำดับ": counter,
-        "ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)": f"{to_thai_month_year(current_runner)} - {to_thai_month_year(next_runner)}\n({age_range_str})",
-        "เสวย - แทรก\n(คู่ดาว)": f"{PLANET_NAMES[main_p]} - {PLANET_NAMES[sub_planet]}",
-        "ประเภท\n(เนื้อแท้)": p_type,
-        "ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี": analysis_text,
-        "สถานะ": is_current_row
-    })
-    
-    current_runner = next_runner
-    counter += 1
+            sub_start = current_runner
+            for sub_p in ordered_subs:
+                sub_power = PLANET_POWERS[sub_p]
+                total_years = (main_power * sub_power) / 108.0
+                years = int(total_years)
+                months_decimal = (total_years - years) * 12
+                months = int(months_decimal)
+                days = round((months_decimal - months) * 30)
+                
+                sub_end = sub_start + relativedelta(years=years, months=months, days=days)
+                
+                # เช็คว่าดาวแทรกช่วงนี้ ทับซ้อนกับช่วงเวลาที่ขอตรวจสอบหรือไม่
+                if sub_end >= target_date and sub_start <= dt_end_target:
+                    p_type, p_essence = lookup_star_pair(main_p, sub_p)
+                    analysis_text = f"**เนื้อแท้:** {p_essence}\n\n"
+                    
+                    seg_date = sub_start
+                    while seg_date < sub_end:
+                        a_full = relativedelta(seg_date, dob).years
+                        a_yang = a_full + 1
+                        
+                        next_birthday = dob + relativedelta(years=a_full + 1)
+                        seg_end = min(next_birthday, sub_end)
+                        
+                        d_sum = get_digit_sum(a_yang)
+                        p_path = generate_taksa_path(natal_planet, gender)
+                        t_bariwan = p_path[(d_sum - 1) % len(p_path)]
+                        
+                        if t_bariwan == 'TK':
+                            analysis_text += f"🔹 **ปี พ.ศ. {seg_date.year + 543} (อายุย่าง {a_yang} ปี):** ทักษาจรตกภูมิ **'ตากลาง'** พลังดาวเข้าสู่จุดปรับสมดุลพิกัดศูนย์กลาง\n\n"
+                        else:
+                            s_logic = SEQ_MALE_CW if gender == 'ชาย' else SEQ_FEMALE_CCW
+                            idx_n = s_logic.index(natal_planet)
+                            n_map = {s_logic[(idx_n + i) % 8]: BHUM_NAMES[i] for i in range(8)}
+                            b_orig = n_map[sub_p]
+                            
+                            idx_t = s_logic.index(t_bariwan)
+                            t_map = {s_logic[(idx_t + i) % 8]: BHUM_NAMES[i] for i in range(8)}
+                            b_trans = t_map[sub_p]
+                            
+                            matrix_desc = predictions_data.get("matrix_64", {}).get(f"{b_orig}_{b_trans}", "รออัปเดตคำพยากรณ์...")
+                            
+                            prefix = "⚠️ **ปีวิกฤต!** " if b_trans == "กาลกิณี" else "🔹 "
+                            analysis_text += f"{prefix}**ปี พ.ศ. {seg_date.year + 543} (อายุย่าง {a_yang} ปี):** บริวารจรตกดาว {PLANET_NAMES[t_bariwan]} ส่งผลให้ดาว {PLANET_NAMES[sub_p]} แปรสภาพเป็น **'{b_trans}จร'** ({b_orig}เดิม ➡️ {b_trans}จร) : {matrix_desc}\n\n"
+                        
+                        seg_date = seg_end
+                        
+                    age_y_start = relativedelta(sub_start, dob).years + 1
+                    age_y_end = relativedelta(sub_end, dob).years + 1
+                    age_range_str = f"อายุย่าง {age_y_start} ปี" if age_y_start == age_y_end else f"อายุย่าง {age_y_start} - {age_y_end} ปี"
+                    
+                    expanded_timeline.append({
+                        "ลำดับ": counter,
+                        "ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)": f"{to_thai_month_year(sub_start)} - {to_thai_month_year(sub_end)}\n({age_range_str})",
+                        "เสวย - แทรก\n(คู่ดาว)": f"{PLANET_NAMES[main_p]} - {PLANET_NAMES[sub_p]}",
+                        "ประเภท\n(เนื้อแท้)": p_type,
+                        "ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี": analysis_text
+                    })
+                    counter += 1
+                sub_start = sub_end
+        current_runner = main_end
+        if current_runner > dt_end_target:
+            break
+    cycle_count += 1
 
-for row in expanded_timeline:
-    with st.container():
-        if row["สถานะ"] != "-":
-            st.markdown(f"### โครงสร้างลูปดาวแทรกที่ {row['ลำดับ']} (🟢 อยู่ในช่วงเวลาที่คุณระบุ)")
-        else:
-            st.markdown(f"### โครงสร้างลูปดาวแทรกที่ {row['ลำดับ']}")
-            
-        col_t1, col_t2, col_t3 = st.columns([1, 1, 3])
-        with col_t1:
-            st.metric(label="ช่วงเวลา (พ.ศ.)", value=row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[0])
-            st.caption(row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[1])
-        with col_t2:
-            st.write(f"**คู่ดาวเสวย-แทรก:**\n{row['เสวย - แทรก\n(คู่ดาว)']}")
-            st.write(f"**ประเภท:** {row['ประเภท\n(เนื้อแท้)']}")
-        with col_t3:
-            st.markdown(row["ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี"])
-        st.markdown("---")
+if not expanded_timeline:
+    st.warning("ไม่พบช่วงดาวแทรกในระยะเวลาที่คุณระบุครับ")
+else:
+    for row in expanded_timeline:
+        with st.container():
+            st.markdown(f"### โครงสร้างลูปดาวแทรกที่ {row['ลำดับ']} 🟢")
+            col_t1, col_t2, col_t3 = st.columns([1, 1, 3])
+            with col_t1:
+                st.metric(label="ช่วงเวลา (พ.ศ.)", value=row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[0])
+                st.caption(row["ช่วงเวลาโดยประมาณ\n(ระบุตามอายุย่าง)"].split("\n")[1])
+            with col_t2:
+                st.write(f"**คู่ดาวเสวย-แทรก:**\n{row['เสวย - แทรก\n(คู่ดาว)']}")
+                st.write(f"**ประเภท:** {row['ประเภท\n(เนื้อแท้)']}")
+            with col_t3:
+                st.markdown(row["ความหมายพื้นฐาน และ ผลลัพธ์เมื่อมหาทักษาจรแทรกแซงในแต่ละปี"])
+            st.markdown("---")
