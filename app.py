@@ -31,9 +31,8 @@ tbody tr:hover { background-color: #f1f8e9; }
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. โหลดข้อมูลคลังคำทำนาย
+# 1. โหลดข้อมูลคลังคำทำนาย (ถอด Cache ออกเพื่อให้อัปเดตทันที)
 # ==========================================
-@st.cache_data
 def load_predictions():
     try:
         with open('predictions.json', 'r', encoding='utf-8') as file:
@@ -162,7 +161,6 @@ with st.sidebar:
     st.markdown("**ช่วงวันที่ต้องการตรวจสอบดวงชะตาจร**")
     start_target = st.date_input("เริ่มจากวันที่", value=today)
     
-    # คำนวณหาดาวเสวยอายุ ณ วันที่ระบุเพื่อทำเมนูตัวเลือก
     target_start_dt = datetime.combine(start_target, datetime.min.time()) if not error_message else today
     curr_main_sb = natal_planet
     curr_main_end_sb = dob if not error_message else today
@@ -182,7 +180,6 @@ with st.sidebar:
         next_pow_sb = PLANET_POWERS[next_main_sb]
         years_left = relativedelta(curr_main_end_sb, target_start_dt).years
 
-    # ระบบเลือกเวลาอัจฉริยะ
     duration_choice = st.selectbox("เลือกระยะเวลาที่ต้องการดู", [
         "ระบุวันที่สิ้นสุดเอง",
         "ดูบวกไป 1 ปี",
@@ -232,7 +229,7 @@ st.header(f"📊 ผลการประมวลผลทักษาจร (�
 st.info(f"**สมการยุบตัวเลข (Digit Sum):** อายุย่าง {age_yang} ปี ➡️ รวมได้ = **{digit_sum} ก้าวดำเนิน** | **ทิศทางวิถี:** เพศ{gender} {'เวียนขวา (ตามเข็ม)' if gender == 'ชาย' else 'เวียนซ้าย (ทวนเข็ม)'}")
 
 # ==========================================
-# 4. กล่องสถานะดาวเสวยอายุ (ย้ายมาด้านบน)
+# 4. กล่องสถานะดาวเสวยอายุ
 # ==========================================
 idx_natal = SEQUENCE_BASE.index(natal_planet)
 natal_ordered_planets = SEQUENCE_BASE[idx_natal:] + SEQUENCE_BASE[:idx_natal]
@@ -394,7 +391,6 @@ while current_runner <= dt_end_target and cycle_count < 200:
                     age_y_end = relativedelta(sub_end, dob).years + 1
                     age_range_str = f"อายุย่าง {age_y_start} ปี" if age_y_start == age_y_end else f"อายุย่าง {age_y_start} - {age_y_end} ปี"
                     
-                    # ตรวจสอบการทับซ้อน (ซ่อม NameError เรียบร้อยแล้วที่บรรทัดนี้)
                     is_overlapping = (sub_start <= dt_end_target) and (sub_end >= target_date)
                     is_current_row = "🟢 อยู่ในช่วงที่ต้องการตรวจสอบ" if is_overlapping else "-"
                     
